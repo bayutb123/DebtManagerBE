@@ -11,6 +11,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.filter.CorsFilter
 
 @Configuration
 @EnableMethodSecurity
@@ -19,6 +22,7 @@ class SecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFilte
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.csrf { it.disable() }
+            .cors { } // enable CORS with bean below
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/auth/google").permitAll()
@@ -30,4 +34,22 @@ class SecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFilte
 
     @Bean
     fun authenticationManager(configuration: AuthenticationConfiguration): AuthenticationManager = configuration.authenticationManager
+
+    @Bean
+    fun corsFilter(): CorsFilter {
+        val config = CorsConfiguration().apply {
+            allowedOrigins = listOf(
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "https://debt-manager-three.vercel.app"
+            )
+            allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            allowedHeaders = listOf("Content-Type", "Authorization")
+            allowCredentials = false
+            maxAge = 3600
+        }
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", config)
+        return CorsFilter(source)
+    }
 }
